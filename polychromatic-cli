@@ -24,6 +24,7 @@ import argparse
 import os
 import signal
 import sys
+import unicodedata
 
 import colorama
 
@@ -50,6 +51,18 @@ verbose = False
 # Formatting
 ########################################
 CHECKMARK = "✔"
+
+def _count_non_latin_chars(string: str):
+    count = 0
+    for char in string:
+        try:
+            if unicodedata.name(char).startswith(("LATIN", "DIGIT", "SPACE", "PUNCTUATION", "SYMBOL")):
+                continue
+        except ValueError:
+            pass
+        count += 1
+    return count
+
 
 def print_columns(data, print_header=False):
     """
@@ -98,6 +111,10 @@ def print_columns(data, print_header=False):
                     col_widths[index] = len(line)
             except KeyError:
                 col_widths[index] = len(line)
+
+            # Consider wide characters for non-latin writing systems that we have translations for
+            col_widths[index] += int(_count_non_latin_chars(line) / 4)
+
             total_cols = total_cols + col_widths[index]
 
     for index, col in enumerate(row):
